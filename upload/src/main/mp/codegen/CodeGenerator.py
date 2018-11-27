@@ -195,13 +195,60 @@ class CodeGenVisitor(BaseVisitor, Utils):
     def visitBinaryOp(self,ast,o):
         ctxt = o
         frame = ctxt.frame
+        opstr = ""
+        op = ast.op#operator
         lc,lt = self.visit(ast.left,o)#return code and type
         rc,rt = self.visit(ast.right,o)
 
-        # if ast.op in ['+','-','*']:
+        if ast.op in ['+','-']:
+            if type(lt) is IntType and type(rt) is FloatType:
+                opstr = lc + self.emit.emitI2F(frame) + rc + self.emit.emitADDOP(op, FloatType(), frame)
+                restype = FloatType()
+            elif type(lt) is FloatType and type(rt) is IntType:
+                opstr = lc + rc + self.emit.emitI2F(frame) + self.emit.emitADDOP(op, FloatType(), frame)
+                restype = FloatType()
+            else:
+                opstr = lc + rc + self.emit.emitADDOP(op, lt, frame)
+                restype = lt
+        elif ast.op == '*':
+            if type(lt) is IntType and type(rt) is FloatType:
+                opstr = lc + self.emit.emitI2F(frame) + rc + self.emit.emitMULOP(op, FloatType(), frame)
+                restype = FloatType()
+            elif type(lt) is FloatType and type(rt) is IntType:
+                opstr = lc + rc + self.emit.emitI2F(frame) + self.emit.emitMULOP(op, FloatType(), frame)
+                restype = FloatType()
+            else:
+                opstr = lc + rc + self.emit.emitMULOP(op, lt, frame)    
+                restype = lt
+        elif ast.op == '/':
+            if type(lt) is IntType and type(rt) is FloatType:
+                opstr = lc + self.emit.emitI2F(frame) + rc + self.emit.emitMULOP(op, FloatType(), frame)
+                restype = FloatType()
+            elif type(lt) is FloatType and type(rt) is IntType:
+                opstr = lc + rc + self.emit.emitI2F(frame) + self.emit.emitMULOP(op, FloatType(), frame)
+                restype = FloatType()
+            elif type(lt) is IntType and type(rt) is IntType:
+                opstr = lc + self.emit.emitI2F(frame) + rc + self.emit.emitI2F(frame) + self.emit.emitMULOP(op, FloatType(), frame)
+                restype = FloatType()
+            else:
+                opstr = lc + rc + self.emit.emitMULOP(op, lt, frame)  
+                restype = lt
+        elif ast.op in ['<','<=','>=','>']:
+            restype = BoolType()
+            if type(lt) is IntType and type(rt) is FloatType:
+                opstr = lc + self.emit.emitI2F(frame) + rc + self.emit.emitREOP(op, FloatType(), frame)
+            elif type(lt) is FloatType and type(rt) is IntType:
+                opstr = lc + rc + self.emit.emitI2F(frame) + self.emit.emitREOP(op, FloatType(), frame)
+            else:
+                opstr = lc + rc + self.emit.emitREOP(op, lt, frame)
+        elif ast.op in ['=','<>']:
+            restype = BoolType()
+            if type(lt) is IntType and type(rt) is IntType:
+                opstr = lc + rc + self.emit.emitREOP(op, IntType(), frame)
+            elif type(lt) is BoolType and type(rt) is BoolType:
+                opstr = lc + rc + self.emit.emitREOP(op, BoolType(), frame)                
 
-
-        
+        return opstr,restype
     def visitIntLiteral(self, ast, o):
         #ast: IntLiteral
         #o: Any
@@ -228,5 +275,4 @@ class CodeGenVisitor(BaseVisitor, Utils):
     def visitStringLiteral(self, ast, o):
         ctxt = o
         frame = ctxt.frame
-        print(type(ast.value))
-        return self.emit.emitPUSHCONST(ast.value,StringType(), frame), StringType()
+        return self.emit.emitPUSHCONST('"' + ast.value + '"',StringType(),frame),StringType()

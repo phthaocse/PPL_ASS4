@@ -421,9 +421,9 @@ class Emitter():
             result.append(self.jvm.emitIFICMPGE(labelF))
         elif op == "<=":
             result.append(self.jvm.emitIFICMPGT(labelF))
-        elif op == "!=":
+        elif op == "<>":
             result.append(self.jvm.emitIFICMPEQ(labelF))
-        elif op == "==":
+        elif op == "=":
             result.append(self.jvm.emitIFICMPNE(labelF))
         result.append(self.emitPUSHCONST("1", IntType(), frame))
         frame.pop()
