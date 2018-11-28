@@ -268,6 +268,19 @@ class CodeGenVisitor(BaseVisitor, Utils):
             opstr = lc + rc + self.emit.emitOROP(frame)         
 
         return opstr,restype
+
+    def visitAssign(self, ast, o):
+        ctxt = o
+        frame = ctxt.frame
+        lc,lt = self.visit(ast.lhs,Access(frame,ctxt.sym,True,False))
+        rc,rt = self.visit(ast.exp,Access(frame,ctxt.sym,False,True))
+        return self.emit.printout(rc + lc)
+
+    def visitId(self, ast, o):
+        ctxt = o
+        res = self.lookup(ast.name,o.sym,lambda x: x.name)
+        
+
     def visitIntLiteral(self, ast, o):
         #ast: IntLiteral
         #o: Any

@@ -102,25 +102,25 @@ class CheckCodeGenSuite(unittest.TestCase):
     	expect = "true\ntrue\nfalse\nfalse"
     	self.assertTrue(TestCodeGen.test(input,expect,511))   
 
-    # def test_reop_int_float12(self):
-    # 	input = Program([
-    # 		FuncDecl(Id("main"),[],[],[
-    # 			CallStmt(Id("putFloatLn"),[BinaryOp('<',IntLiteral(1),FloatLiteral(5.5))]),
-    #             CallStmt(Id("putFloatLn"),[BinaryOp('<=',IntLiteral(1),FloatLiteral(5.5))]),
-    #             CallStmt(Id("putFloatLn"),[BinaryOp('>=',IntLiteral(1),FloatLiteral(5.5))]),
-    #             CallStmt(Id("putFloat"),[BinaryOp('>',IntLiteral(1),FloatLiteral(5.5))])])])
-    # 	expect = "true\ntrue\nfalse\nfalse"
-    # 	self.assertTrue(TestCodeGen.test(input,expect,512))   
+    def test_reop_int_float12(self):
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putBoolLn"),[BinaryOp('<',IntLiteral(1),FloatLiteral(5.5))]),
+                CallStmt(Id("putBoolLn"),[BinaryOp('<=',IntLiteral(1),FloatLiteral(5.5))]),
+                CallStmt(Id("putBoolLn"),[BinaryOp('>=',IntLiteral(1),FloatLiteral(5.5))]),
+                CallStmt(Id("putBool"),[BinaryOp('>',IntLiteral(1),FloatLiteral(5.5))])])])
+    	expect = "true\ntrue\nfalse\nfalse"
+    	self.assertTrue(TestCodeGen.test(input,expect,512))   
 
-    # def test_reop_int_float13(self):
-    # 	input = Program([
-    # 		FuncDecl(Id("main"),[],[],[
-    # 			CallStmt(Id("putFloatLn"),[BinaryOp('<',FloatLiteral(1.0),FloatLiteral(5.5))]),
-    #             CallStmt(Id("putFloatLn"),[BinaryOp('<=',FloatLiteral(1.0),FloatLiteral(5.5))]),
-    #             CallStmt(Id("putFloatLn"),[BinaryOp('>=',FloatLiteral(1.0),FloatLiteral(5.5))]),
-    #             CallStmt(Id("putFloat"),[BinaryOp('>',FloatLiteral(1.0),FloatLiteral(5.5))])])])
-    # 	expect = "true\ntrue\nfalse\nfalse"
-    # 	self.assertTrue(TestCodeGen.test(input,expect,513))   
+    def test_reop_int_float13(self):
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putBoolLn"),[BinaryOp('<',FloatLiteral(1.0),FloatLiteral(5.5))]),
+                CallStmt(Id("putBoolLn"),[BinaryOp('<=',FloatLiteral(1.0),FloatLiteral(5.5))]),
+                CallStmt(Id("putBoolLn"),[BinaryOp('>=',FloatLiteral(1.0),FloatLiteral(5.5))]),
+                CallStmt(Id("putBool"),[BinaryOp('>',FloatLiteral(1.0),FloatLiteral(5.5))])])])
+    	expect = "true\ntrue\nfalse\nfalse"
+    	self.assertTrue(TestCodeGen.test(input,expect,513))   
 
     def test_reop_equal14(self):
     	input = Program([
@@ -164,3 +164,37 @@ class CheckCodeGenSuite(unittest.TestCase):
 				CallStmt(Id("putBool"),[BinaryOp('or',BooleanLiteral(False),BooleanLiteral(True))])])])
     	expect = "true\nfalse\ntrue"
     	self.assertTrue(TestCodeGen.test(input,expect,518)) 
+
+    def test_reop_float_int19(self):
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putBoolLn"),[BinaryOp('<',FloatLiteral(21.5),IntLiteral(2))]),
+                CallStmt(Id("putBoolLn"),[BinaryOp('<=',FloatLiteral(21.5),IntLiteral(2))]),
+                CallStmt(Id("putBoolLn"),[BinaryOp('>=',FloatLiteral(21.5),IntLiteral(2))]),
+                CallStmt(Id("putBool"),[BinaryOp('>',FloatLiteral(21.5),IntLiteral(2))])])])
+    	expect = "false\nfalse\ntrue\ntrue"
+    	self.assertTrue(TestCodeGen.test(input,expect,519))   
+
+    def test_var20(self):
+        input = Program([
+                VarDecl(Id("a"),IntType()),
+                VarDecl(Id("b"),IntType()),
+                VarDecl(Id("c"),FloatType()),
+                FuncDecl(Id("main"),[],[],[
+                    CallStmt(Id("putIntLn"),[IntLiteral(2)]),
+                    CallStmt(Id("putInt"),[IntLiteral(2)])])])
+
+        expect  = "2\n2"
+        self.assertTrue(TestCodeGen.test(input,expect,520)) 
+
+    def test_assign21(self):
+        input = Program([
+                VarDecl(Id("a"),IntType()),
+                VarDecl(Id("b"),IntType()),
+                VarDecl(Id("c"),FloatType()),
+                FuncDecl(Id("main"),[],[],[
+                    Assign(Id('a'),IntLiteral(2)),
+                    CallStmt(Id("putInt"),[Id('a')])])])
+
+        expect  = "2\n2"
+        self.assertTrue(TestCodeGen.test(input,expect,521)) 
