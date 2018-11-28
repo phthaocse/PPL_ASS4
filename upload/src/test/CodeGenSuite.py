@@ -112,6 +112,55 @@ class CheckCodeGenSuite(unittest.TestCase):
     # 	expect = "true\ntrue\nfalse\nfalse"
     # 	self.assertTrue(TestCodeGen.test(input,expect,512))   
 
- 
+    # def test_reop_int_float13(self):
+    # 	input = Program([
+    # 		FuncDecl(Id("main"),[],[],[
+    # 			CallStmt(Id("putFloatLn"),[BinaryOp('<',FloatLiteral(1.0),FloatLiteral(5.5))]),
+    #             CallStmt(Id("putFloatLn"),[BinaryOp('<=',FloatLiteral(1.0),FloatLiteral(5.5))]),
+    #             CallStmt(Id("putFloatLn"),[BinaryOp('>=',FloatLiteral(1.0),FloatLiteral(5.5))]),
+    #             CallStmt(Id("putFloat"),[BinaryOp('>',FloatLiteral(1.0),FloatLiteral(5.5))])])])
+    # 	expect = "true\ntrue\nfalse\nfalse"
+    # 	self.assertTrue(TestCodeGen.test(input,expect,513))   
 
-    
+    def test_reop_equal14(self):
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putBoolLn"),[BinaryOp('=',IntLiteral(1),IntLiteral(5))]),
+                CallStmt(Id("putBoolLn"),[BinaryOp('<>',IntLiteral(1),IntLiteral(5))]),
+                CallStmt(Id("putBoolLn"),[BinaryOp('=',BooleanLiteral(True),BooleanLiteral(True))]),
+                CallStmt(Id("putBool"),[BinaryOp('<>',BooleanLiteral(True),BooleanLiteral(True))])])])
+    	expect = "false\ntrue\ntrue\nfalse"
+    	self.assertTrue(TestCodeGen.test(input,expect,514)) 
+ 
+    def test_div15(self):    
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putIntLn"),[BinaryOp('div',IntLiteral(4),IntLiteral(3))]),
+                CallStmt(Id("putInt"),[BinaryOp('div',IntLiteral(6),IntLiteral(2))])])])
+    	expect = "1\n3"
+    	self.assertTrue(TestCodeGen.test(input,expect,515)) 
+
+    def test_mod16(self):    
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putIntLn"),[BinaryOp('mod',IntLiteral(4),IntLiteral(3))]),
+				CallStmt(Id("putInt"),[BinaryOp('mod',IntLiteral(6),IntLiteral(3))])])])
+    	expect = "1\n0"
+    	self.assertTrue(TestCodeGen.test(input,expect,516)) 
+
+    def test_and17(self):    
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putBoolLn"),[BinaryOp('and',BooleanLiteral(True),BooleanLiteral(True))]),
+                CallStmt(Id("putBool"),[BinaryOp('and',BooleanLiteral(False),BooleanLiteral(True))])])])
+    	expect = "true\nfalse"
+    	self.assertTrue(TestCodeGen.test(input,expect,517)) 
+
+    def test_or18(self):    
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putBoolLn"),[BinaryOp('or',BooleanLiteral(True),BooleanLiteral(True))]),
+                CallStmt(Id("putBoolLn"),[BinaryOp('or',BooleanLiteral(False),BooleanLiteral(False))]),
+				CallStmt(Id("putBool"),[BinaryOp('or',BooleanLiteral(False),BooleanLiteral(True))])])])
+    	expect = "true\nfalse\ntrue"
+    	self.assertTrue(TestCodeGen.test(input,expect,518)) 

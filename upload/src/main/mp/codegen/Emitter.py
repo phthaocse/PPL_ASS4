@@ -433,6 +433,42 @@ class Emitter():
         result.append(self.emitLABEL(labelO, frame))
         return ''.join(result)
 
+    '''
+    * Use for Re Op float
+    '''
+    def emitREFOP(self, op, in_, frame):
+        #op: String
+        #in_: Type
+        #frame: Frame
+        #..., value1, value2 -> ..., result
+        result = list()
+        labelF = frame.getNewLabel()
+        labelO = frame.getNewLabel()
+
+        frame.pop()
+        frame.pop()
+        result.append(self.jvm.emitFCMPL())#push 1 if a > b 0 if a == b -1
+        if op == ">":#resval = 1
+            result.append(self.jvm.emitIFLE(labelF))
+        elif op == ">=":#resval = 1 or = 0
+            result.append(self.jvm.emitIFLT(labelF))
+        elif op == "<":#resval = -1
+            result.append(self.jvm.emitIFGE(labelF))
+        elif op == "<=":#resval = -1 or = 0
+            result.append(self.jvm.emitIFGT(labelF))
+        elif op == "<>":#resval != 0
+            result.append(self.jvm.emitIFEQ(labelF))
+        elif op == "=":#resval = 0
+            result.append(self.jvm.emitIFNE(labelF))
+        result.append(self.emitPUSHCONST("1", IntType(), frame))
+        frame.pop()        
+        result.append(self.emitGOTO(labelO, frame))
+        result.append(self.emitLABEL(labelF, frame))
+        result.append(self.emitPUSHCONST("0", IntType(), frame))
+        result.append(self.emitLABEL(labelO, frame))
+        return ''.join(result)
+
+
     def emitRELOP(self, op, in_, trueLabel, falseLabel, frame):
         #op: String
         #in_: Type

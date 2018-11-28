@@ -192,6 +192,11 @@ class CodeGenVisitor(BaseVisitor, Utils):
         self.emit.printout(in_[0])
         self.emit.printout(self.emit.emitINVOKESTATIC(cname + "/" + ast.method.name, ctype, frame))
 
+    def visitVarDecl(self, ast, o):
+        subctxt = o
+        self.emit.printout(self.emit.emitATTRIBUTE(ast.variable.name,ast.varType,False,""))
+        return SubBody(None,[Symbol(ast.variable.name,ast.varType,CName(self.className))]+subctxt.sym)
+
     def visitBinaryOp(self,ast,o):
         ctxt = o
         frame = ctxt.frame
@@ -236,17 +241,31 @@ class CodeGenVisitor(BaseVisitor, Utils):
         elif ast.op in ['<','<=','>=','>']:
             restype = BoolType()
             if type(lt) is IntType and type(rt) is FloatType:
-                opstr = lc + self.emit.emitI2F(frame) + rc + self.emit.emitREOP(op, FloatType(), frame)
+                opstr = lc + self.emit.emitI2F(frame) + rc + self.emit.emitREFOP(op, FloatType(), frame)
             elif type(lt) is FloatType and type(rt) is IntType:
-                opstr = lc + rc + self.emit.emitI2F(frame) + self.emit.emitREOP(op, FloatType(), frame)
+                opstr = lc + rc + self.emit.emitI2F(frame) + self.emit.emitREFOP(op, FloatType(), frame)
+            elif type(lt) is FloatType:
+                opstr = lc + rc + self.emit.emitREFOP(op, lt, frame)
             else:
-                opstr = lc + rc + self.emit.emitREOP(op, lt, frame)
+                opstr = lc + rc + self.emit.emitREOP(op, lt, frame)                
         elif ast.op in ['=','<>']:
             restype = BoolType()
             if type(lt) is IntType and type(rt) is IntType:
                 opstr = lc + rc + self.emit.emitREOP(op, IntType(), frame)
             elif type(lt) is BoolType and type(rt) is BoolType:
-                opstr = lc + rc + self.emit.emitREOP(op, BoolType(), frame)                
+                opstr = lc + rc + self.emit.emitREOP(op, BoolType(), frame)   
+        elif ast.op == 'div':
+            restype = IntType()
+            opstr = lc + rc + self.emit.emitDIV(frame)
+        elif ast.op == 'mod':
+            restype = IntType()
+            opstr = lc + rc + self.emit.emitMOD(frame)    
+        elif ast.op == 'and':
+            restype = BoolType()
+            opstr = lc + rc + self.emit.emitANDOP(frame)
+        elif ast.op == 'or':
+            restype = BoolType()
+            opstr = lc + rc + self.emit.emitOROP(frame)         
 
         return opstr,restype
     def visitIntLiteral(self, ast, o):
