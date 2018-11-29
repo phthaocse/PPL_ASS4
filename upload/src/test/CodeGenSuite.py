@@ -187,7 +187,7 @@ class CheckCodeGenSuite(unittest.TestCase):
         expect  = "2\n2"
         self.assertTrue(TestCodeGen.test(input,expect,520)) 
 
-    def test_assign21(self):
+    def test_assign_glo21(self):
         input = Program([
                 VarDecl(Id("a"),IntType()),
                 VarDecl(Id("b"),IntType()),
@@ -196,5 +196,47 @@ class CheckCodeGenSuite(unittest.TestCase):
                     Assign(Id('a'),IntLiteral(2)),
                     CallStmt(Id("putInt"),[Id('a')])])])
 
-        expect  = "2\n2"
+        expect  = "2"
         self.assertTrue(TestCodeGen.test(input,expect,521)) 
+
+    def test_assign_glo22(self):
+        input = Program([
+                VarDecl(Id("a"),IntType()),
+                VarDecl(Id("b"),IntType()),
+                VarDecl(Id("c"),FloatType()),
+                FuncDecl(Id("main"),[],[],[
+                    Assign(Id('a'),IntLiteral(2)),
+					Assign(Id('b'),IntLiteral(5)),
+					Assign(Id('c'),FloatLiteral(5.0)),
+					Assign(Id('b'),Id('a')),
+                    CallStmt(Id("putIntLn"),[Id('a')]),
+					CallStmt(Id("putFloat"),[Id('c')])])])
+
+        expect  = "2\n5.0"
+        self.assertTrue(TestCodeGen.test(input,expect,522)) 
+
+    def test_if23(self):
+        input = Program([VarDecl(Id(r'a'),IntType()),FuncDecl(Id(r'main'),[],[],[If(BinaryOp(r'<',IntLiteral(3),IntLiteral(6)),[Assign(Id(r'a'),IntLiteral(3))],[Assign(Id(r'a'),IntLiteral(2))]),CallStmt(Id(r'putInt'),[Id(r'a')])],VoidType())])
+        expect  = "3"
+        self.assertTrue(TestCodeGen.test(input,expect,523)) 
+
+    def test_if_withoutelse24(self):
+        input = Program([VarDecl(Id(r'a'),IntType()),FuncDecl(Id(r'main'),[],[],[If(BinaryOp(r'<',IntLiteral(3),IntLiteral(6)),[Assign(Id(r'a'),IntLiteral(2))],[]),CallStmt(Id(r'putInt'),[Id(r'a')])],VoidType())])
+        expect  = "2"
+        self.assertTrue(TestCodeGen.test(input,expect,524)) 
+
+    def test_unary_not25(self):    
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putBoolLn"),[UnaryOp('not',BooleanLiteral(True))]),
+                CallStmt(Id("putBool"),[UnaryOp('not',BooleanLiteral(False))])])])
+    	expect = "false\ntrue"
+    	self.assertTrue(TestCodeGen.test(input,expect,525)) 
+
+    def test_unary_minus26(self):    
+    	input = Program([
+    		FuncDecl(Id("main"),[],[],[
+    			CallStmt(Id("putIntLn"),[UnaryOp('-',IntLiteral(1))]),
+                CallStmt(Id("putFloat"),[UnaryOp('-',FloatLiteral(5.0))])])])
+    	expect = "-1\n-5.0"
+    	self.assertTrue(TestCodeGen.test(input,expect,526)) 

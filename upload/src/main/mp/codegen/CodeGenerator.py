@@ -162,7 +162,7 @@ class CodeGenVisitor(BaseVisitor, Utils):
         if type(returnType) is VoidType:
             self.emit.printout(self.emit.emitRETURN(VoidType(), frame))
         self.emit.printout(self.emit.emitENDMETHOD(frame))
-        frame.exitScope();
+        frame.exitScope()
 
     def visitFuncDecl(self, ast, o):
         #ast: FuncDecl
@@ -196,6 +196,20 @@ class CodeGenVisitor(BaseVisitor, Utils):
         subctxt = o
         self.emit.printout(self.emit.emitATTRIBUTE(ast.variable.name,ast.varType,False,""))
         return SubBody(None,[Symbol(ast.variable.name,ast.varType,CName(self.className))]+subctxt.sym)
+
+    def visitUnaryOp(self,ast,o):
+        ctxt = o
+        frame = ctxt.frame
+        opstr = ""
+        op = ast.op#operator
+        exp_c,exp_t = self.visit(ast.body,o)#return code and type    
+        if ast.op == 'not':
+            opstr = exp_c + self.emit.emitNOT(IntType(),frame)    
+            restype = BoolType()
+        else:
+            opstr = exp_c + self.emit.emitNEGOP(exp_t,frame)
+            restype = exp_t
+        return opstr, restype
 
     def visitBinaryOp(self,ast,o):
         ctxt = o
@@ -272,14 +286,53 @@ class CodeGenVisitor(BaseVisitor, Utils):
     def visitAssign(self, ast, o):
         ctxt = o
         frame = ctxt.frame
-        lc,lt = self.visit(ast.lhs,Access(frame,ctxt.sym,True,False))
         rc,rt = self.visit(ast.exp,Access(frame,ctxt.sym,False,True))
-        return self.emit.printout(rc + lc)
+        lc,lt = self.visit(ast.lhs,Access(frame,ctxt.sym,True,False))
+        self.emit.printout(rc + lc)
+        return rc + lc 
 
     def visitId(self, ast, o):
         ctxt = o
+        frame = ctxt.frame
         res = self.lookup(ast.name,o.sym,lambda x: x.name)
+        if ctxt.isLeft:
+            if type(res.value) is CName:
+                return self.emit.emitPUTSTATIC(res.value.value + "/" + res.name,res.mtype,frame),res.mtype
+            else:
+                return "",VoidType()
+        else: 
+            if type(res.value) is CName:
+                return self.emit.emitGETSTATIC(res.value.value + "/" + res.name,res.mtype,frame),res.mtype
+            else:
+                return "",VoidType()
         
+    def visitIf(self, ast, o):
+        ctxt = o
+        frame = ctxt.frame
+        result = list()
+        exp_c, exp_t = self.visit(ast.expr,Access(frame,ctxt.sym,False,True))
+        result.append(exp_c)#gen code for exp
+        labelE = frame.getNewLabel()
+        labelNext = frame.getNewLabel()
+        thenstmt = [self.visit(x,o) for x in ast.thenStmt]
+        elsestmt = [self.visit(x,o) for x in ast.elseStmt]
+        if elsestmt != []:
+            lab = labelE
+        else: 
+            lab = labelNext
+        result.append(self.emit.emitIFFALSE(lab,frame))
+        thenstmt = ''.join(str(x) for x in thenstmt)
+
+        result.append(thenstmt)
+        if elsestmt != None:
+            result.append(self.emit.emitGOTO(labelNext,frame))
+            result.append(self.emit.emitLABEL(labelE,frame))
+            elsestmt = ''.join(str(x) for x in elsestmt)
+            result.append(elsestmt)
+        result.append(self.emit.emitLABEL(labelNext,frame))
+        code = ''.join(result)
+        self.emit.printout(code)
+        return code
 
     def visitIntLiteral(self, ast, o):
         #ast: IntLiteral
