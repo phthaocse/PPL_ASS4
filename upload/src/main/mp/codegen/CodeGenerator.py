@@ -143,11 +143,28 @@ class CodeGenVisitor(BaseVisitor, Utils):
 
         glenv = o
 
-        # Generate code for parameter declarations
+        # Generate code for parameter declarations and local
+        param = consdecl.param
         if isInit:
             self.emit.printout(self.emit.emitVAR(frame.getNewIndex(), "this", ClassType(self.className), frame.getStartLabel(), frame.getEndLabel(), frame))
         if isMain:
             self.emit.printout(self.emit.emitVAR(frame.getNewIndex(), "args", ArrayPointerType(StringType()), frame.getStartLabel(), frame.getEndLabel(), frame))
+        else:
+            if param:
+                subbody = SubBody(frame, glenv)
+                for x in param:
+                    subbody = self.visit(x,subbody)
+                frame = subbody.frame
+                glenv = subbody.sym
+
+        
+        local = consdecl.local
+        if local:
+            subbody = SubBody(frame, glenv)
+            for x in local:
+                subbody = self.visit(x,subbody)
+            frame = subbody.frame
+            glenv = subbody.sym
 
         body = consdecl.body
         self.emit.printout(self.emit.emitLABEL(frame.getStartLabel(), frame))
@@ -159,6 +176,7 @@ class CodeGenVisitor(BaseVisitor, Utils):
         list(map(lambda x: self.visit(x, SubBody(frame, glenv)), body))
 
         self.emit.printout(self.emit.emitLABEL(frame.getEndLabel(), frame))
+        #print(frame.getEndLabel())
         if type(returnType) is VoidType:
             self.emit.printout(self.emit.emitRETURN(VoidType(), frame))
         self.emit.printout(self.emit.emitENDMETHOD(frame))
@@ -193,9 +211,16 @@ class CodeGenVisitor(BaseVisitor, Utils):
         self.emit.printout(self.emit.emitINVOKESTATIC(cname + "/" + ast.method.name, ctype, frame))
 
     def visitVarDecl(self, ast, o):
-        subctxt = o
-        self.emit.printout(self.emit.emitATTRIBUTE(ast.variable.name,ast.varType,False,""))
-        return SubBody(None,[Symbol(ast.variable.name,ast.varType,CName(self.className))]+subctxt.sym)
+        ctxt = o
+        frame = ctxt.frame
+        env = ctxt.sym
+        if frame:#param and local
+            idx = frame.getNewIndex()
+            self.emit.printout(self.emit.emitVAR(idx,ast.variable.name, ast.varType, frame.getStartLabel(), frame.getEndLabel(), frame))
+            return SubBody(frame,[Symbol(ast.variable.name,ast.varType,Index(idx))]+env)
+        else:#global var
+            self.emit.printout(self.emit.emitATTRIBUTE(ast.variable.name,ast.varType,False,""))
+            return SubBody(None,[Symbol(ast.variable.name,ast.varType,CName(self.className))]+env)
 
     def visitUnaryOp(self,ast,o):
         ctxt = o
@@ -209,6 +234,7 @@ class CodeGenVisitor(BaseVisitor, Utils):
         else:
             opstr = exp_c + self.emit.emitNEGOP(exp_t,frame)
             restype = exp_t
+        o = ctxt
         return opstr, restype
 
     def visitBinaryOp(self,ast,o):
@@ -294,44 +320,64 @@ class CodeGenVisitor(BaseVisitor, Utils):
     def visitId(self, ast, o):
         ctxt = o
         frame = ctxt.frame
-        res = self.lookup(ast.name,o.sym,lambda x: x.name)
+        res = self.lookup(ast.name,ctxt.sym,lambda x: x.name)
         if ctxt.isLeft:
             if type(res.value) is CName:
                 return self.emit.emitPUTSTATIC(res.value.value + "/" + res.name,res.mtype,frame),res.mtype
             else:
-                return "",VoidType()
+                return self.emit.emitWRITEVAR(res.name,res.mtype,res.value.value,frame),res.mtype
         else: 
             if type(res.value) is CName:
                 return self.emit.emitGETSTATIC(res.value.value + "/" + res.name,res.mtype,frame),res.mtype
             else:
-                return "",VoidType()
+                return self.emit.emitREADVAR(res.name,res.mtype,res.value.value,frame),res.mtype
         
     def visitIf(self, ast, o):
         ctxt = o
         frame = ctxt.frame
         result = list()
+        # exp_c, exp_t = self.visit(ast.expr,Access(frame,ctxt.sym,False,True))
+        # result.append(exp_c)#gen code for exp
+        # labelE = frame.getNewLabel()
+        # labelNext = frame.getNewLabel()
+
+        # result.append(self.emit.emitIFFALSE(labelE,frame))
+        # thenstmt = [self.visit(x,o) for x in ast.thenStmt]
+        # thenstmt=''.join(str(x) for x in thenstmt)
+        # result.append(thenstmt)
+        # result.append(self.emit.emitGOTO(labelNext,frame))
+        # result.append(self.emit.emitLABEL(labelE,frame))
+        # elsestmt = [self.visit(x,o) for x in ast.elseStmt]
+        # elsestmt = ''.join(str(x) for x in elsestmt)
+        # result.append(elsestmt)
+        # result.append(self.emit.emitLABEL(labelNext,frame))
         exp_c, exp_t = self.visit(ast.expr,Access(frame,ctxt.sym,False,True))
         result.append(exp_c)#gen code for exp
+        self.emit.printout(result[-1])
         labelE = frame.getNewLabel()
         labelNext = frame.getNewLabel()
-        thenstmt = [self.visit(x,o) for x in ast.thenStmt]
-        elsestmt = [self.visit(x,o) for x in ast.elseStmt]
-        if elsestmt != []:
+
+        if ast.elseStmt != []:
             lab = labelE
         else: 
             lab = labelNext
         result.append(self.emit.emitIFFALSE(lab,frame))
+        self.emit.printout(result[-1])
+        thenstmt = [self.visit(x,o) for x in ast.thenStmt]
         thenstmt = ''.join(str(x) for x in thenstmt)
-
         result.append(thenstmt)
-        if elsestmt != None:
+        if ast.elseStmt != None:
             result.append(self.emit.emitGOTO(labelNext,frame))
+            self.emit.printout(result[-1])
             result.append(self.emit.emitLABEL(labelE,frame))
+            self.emit.printout(result[-1])
+            elsestmt = [self.visit(x,o) for x in ast.elseStmt]
             elsestmt = ''.join(str(x) for x in elsestmt)
             result.append(elsestmt)
         result.append(self.emit.emitLABEL(labelNext,frame))
+        self.emit.printout(result[-1])
         code = ''.join(result)
-        self.emit.printout(code)
+
         return code
 
     def visitIntLiteral(self, ast, o):

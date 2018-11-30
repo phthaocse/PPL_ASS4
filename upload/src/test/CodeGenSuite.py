@@ -240,3 +240,8 @@ class CheckCodeGenSuite(unittest.TestCase):
                 CallStmt(Id("putFloat"),[UnaryOp('-',FloatLiteral(5.0))])])])
     	expect = "-1\n-5.0"
     	self.assertTrue(TestCodeGen.test(input,expect,526)) 
+
+    def test_local_var27(self):    
+    	input = Program([VarDecl(Id(r'a'),IntType()),FuncDecl(Id(r'main'),[],[VarDecl(Id(r'b'),IntType()),VarDecl(Id(r'c'),IntType())],[Assign(Id(r'b'),IntLiteral(2)),If(BinaryOp(r'<',IntLiteral(3),IntLiteral(6)),[Assign(Id(r'b'),IntLiteral(3))],[]),CallStmt(Id(r'putInt'),[Id(r'b')])],VoidType())])
+    	expect = "3"
+    	self.assertTrue(TestCodeGen.test(input,expect,527)) 
